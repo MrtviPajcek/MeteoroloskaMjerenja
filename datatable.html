@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Daniel Tumir">
+    <meta name='language' content='HR'>
+    <meta name='date' content='Jan. 5, 2025'>
+    <meta name='keywords' content='vlažnost zraka, meteorologija'>
+    <meta name='description' content='skup izmjerenih vlažnosti zraka mjerenih u određenim meteorološkim postajama'>
+    <title>Meteorološki podaci</title>
+</head>
+<style>
+    body {
+    background-color: white;
+}
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("#searchButton").on("click", function (event) {
+            event.preventDefault();
+            let query = $("#searchQuery").val();
+            let field = $("#field").val();
+            $.ajax({
+                url: "/updateTable",
+                type: "GET",
+                data: { query: query, field: field },
+                success: function (response) {
+                    let tableBody = $("table tbody");
+                    tableBody.empty();
+                    tableBody.append(`<tr>
+                                        <th>Država</th>
+                                        <th>Grad</th>
+                                        <th>Godina</th>
+                                        <th>Mjesec</th>
+                                        <th>Dan</th>
+                                        <th>Sat</th>
+                                        <th>Ime postaje</th>
+                                        <th>Geografska širina</th>
+                                        <th>Geografska dužina</th>
+                                        <th>Vlažnost zraka</th>
+                                    </tr>`)
+
+                    response.data.forEach((row) => {
+                        let tableRow = `
+                            <tr>
+                                <td>${row.ime_drzave}</td>
+                                <td>${row.ime_grada}</td>
+                                <td>${row.godina}</td>
+                                <td>${row.mjesec}</td>
+                                <td>${row.dan}</td>
+                                <td>${row.sat}</td>
+                                <td>${row.ime_postaje}</td>
+                                <td>${row.geografska_sirina}</td>
+                                <td>${row.geografska_duzina}</td>
+                                <td>${row.vlaznost_zraka}</td>
+                            </tr>
+                        `;
+                        tableBody.append(tableRow);
+                    });
+                },
+                error: function (xhr, status, error) {
+                    alert("Došlo je do greške prilikom dohvaćanja podataka.");
+                },
+            });
+        });
+    });
+</script>
+<body>  
+    <h1>Tablica meteoroloških podataka</h1>
+    <label for="searchQuery">Polje za pretragu:</label>
+    <input type="text" id="searchQuery" name="searchQuery">
+    <select name="field" id="field">
+        <option value="Wildcard">Sva polja (wildcard)</option>
+        <option value="Drzava">Država</option>
+        <option value="Grad">Grad</option>
+        <option value="Godina">Godina</option>
+        <option value="Mjesec">Mjesec</option>
+        <option value="Dan">Dan</option>
+        <option value="Sat">Sat</option>
+        <option value="Ime postaje">Ime postaje</option>
+        <option value="Geografska sirina">Geografska širina</option>
+        <option value="Geografska duzina">Geografska dužina</option>
+        <option value="Vlaznost zraka">Vlažnost zraka</option>
+    </select>
+
+    <button id="searchButton">Pretraži</button>
+    
+    <table>
+        <tbody>
+            <tr>
+                <th>Država</th>
+                <th>Grad</th>
+                <th>Godina</th>
+                <th>Mjesec</th>
+                <th>Dan</th>
+                <th>Sat</th>
+                <th>Ime postaje</th>
+                <th>Geografska širina</th>
+                <th>Geografska dužina</th>
+                <th>Vlažnost zraka</th>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><a href="preuzmiCSVtablice">Preuzmi CSV</a></p>
+    <p><a href="preuzmiJSONtablice">Preuzmi JSON</a></p>
+    <p><a href="/">home page</a></p>
+    
+</body>
+</html>

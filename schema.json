@@ -1,0 +1,56 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "meteoroloskiPodaci.json",
+    "type": "array",
+    "default": [],
+    "title": "Meteoroloski Podaci",
+    "description": "skup izmjerenih vlažnosti zraka mjerenih u određenim meteorološkim postajama",
+    "items": {
+        "type": "object",
+        "title": "A Schema",
+        "required": [
+            "ime_drzave",
+            "ime_grada",
+            "godina",
+            "mjesec",
+            "dan",
+            "sat",
+            "ime_postaje",
+            "geografska_sirina",
+            "geografska_duzina",
+            "vlaznost_zraka"
+        ],
+        "properties": {
+            "ime_drzave": {
+                "type": "string"
+            },
+            "ime_grada": {
+                "type": "string"
+            },
+            "godina": {
+                "type": "integer"
+            },
+            "mjesec": {
+                "type": "integer"
+            },
+            "dan": {
+                "type": "integer"
+            },
+            "sat": {
+                "type": "integer"
+            },
+            "ime_postaje": {
+                "type": "string"
+            },
+            "geografska_sirina": {
+                "type": "number"
+            },
+            "geografska_duzina": {
+                "type": "number"
+            },
+            "vlaznost_zraka": {
+                "type": "integer"
+            }
+        }
+    }
+}
