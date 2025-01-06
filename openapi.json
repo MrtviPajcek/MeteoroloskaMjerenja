@@ -1,0 +1,216 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "info": "skup izmjerenih vlažnosti zraka mjerenih u određenim meteorološkim postajama",
+        "version": "3.0"
+    },
+    "paths": {
+        "/api/database": {
+            "get": {
+                "summary": "Vraca dump baze podataka",
+                "description": "Vraca dump baze podataka u json formatu",
+                "produces": [
+                    "json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "fetched successfully"
+                    }
+                }
+            }
+        },
+        "/api/datapoint/{id}": {
+            "get": {
+                "summary": "Vraca podatak iz baze",
+                "description": "Vraca podatak iz baze sa navedenim id-om",
+                "produces": [
+                    "json"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the resource",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "fetched successfully"
+                    },
+                    "404": {
+                        "description": "Object with the provided ID doesn't exist"
+                    }
+                }
+            }
+        },
+        "/api/datapointMjerenje/{id}": {
+            "get": {
+                "summary": "Vraca podatak iz baze",
+                "description": "Vraca podatak iz baze sa navedenim id-om iz tablice Mjerenje",
+                "produces": [
+                    "json"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the resource",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "fetched successfully"
+                    },
+                    "404": {
+                        "description": "Object with the provided ID doesn't exist"
+                    }
+                }
+            }
+        },"/api/datapointPostaja/{id}": {
+            "get": {
+                "summary": "Vraca podatak iz baze",
+                "description": "Vraca podatak iz baze sa navedenim id-om iz tablice Postaje",
+                "produces": [
+                    "json"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the resource",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "fetched successfully"
+                    },
+                    "404": {
+                        "description": "Object with the provided ID doesn't exist"
+                    }
+                }
+            }
+        },
+        "/api/datapointDrzavaGrad/{id}": {
+            "get": {
+                "summary": "Vraca podatak iz baze",
+                "description": "Vraca podatak iz baze sa navedenim id-om iz tablica Drzave i Gradovi",
+                "produces": [
+                    "json"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the resource",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "fetched successfully"
+                    },
+                    "404": {
+                        "description": "Object with the provided ID doesn't exist"
+                    }
+                }
+            }
+        },
+        "/api/dodajDrzavu/{ime}": {
+            "get": {
+                "summary": "Dodaje podatak u bazu",
+                "description": "Dodaju novu drzavu u tablicu Drzave",
+                "parameters": [
+                    {
+                        "name": "ime",
+                        "in": "path",
+                        "description": "name of the new country",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Drzava uspjesno dodana"
+                    },
+                    "400": {
+                        "description": "Drzava vec postoji"
+                    },
+                    "500": {
+                        "description": "Doslo je do pogreske prilikom dodavanja drzave"
+                    }
+                }
+            }
+        },
+        "/api/izmijeniDrzavu/{id}/{ime}": {
+            "get": {
+                "summary": "Mijenja podatak iz baze",
+                "description": "Mijenja ime drzave u tablicu Drzave",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "id of the new country",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }, {
+                        "name": "ime",
+                        "in": "path",
+                        "description": "name of the new country",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ime drzave uspjesno izmjenjeno"
+                    },
+                    "400": {
+                        "description": "Drzava ne postoji"
+                    },
+                    "500": {
+                        "description": "Doslo je do pogreske prilikom dodavanja drzave"
+                    }
+                }
+            }
+        },
+        "/api/makniDrzavu/{id}": {
+            "get": {
+                "summary": "Brise podatak iz baze",
+                "description": "Brise drzavu iz tablice Drzave",
+                "parameters": [
+                    {
+                        "name": "ime",
+                        "in": "path",
+                        "description": "id of the new country",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Drzava uspjesno obrisana"
+                    },
+                    "400": {
+                        "description": "Drzava ne postoji"
+                    },
+                    "500": {
+                        "description": "Doslo je do pogreske prilikom dodavanja drzave"
+                    }
+                }
+            }
+        }
+    }
+}
