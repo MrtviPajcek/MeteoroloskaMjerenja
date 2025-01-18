@@ -5,8 +5,27 @@ import json
 import csv
 from flask_restful import Resource, Api, reqparse, fields, marshal_with, abort
 from sqlalchemy.engine.row import Row
+from os import environ as env
+from urllib.parse import quote_plus, urlencode
+from authlib.integrations.flask_client import OAuth
+from flask import Flask, redirect, render_template, session, url_for
+from auth0.v3.authentication import Users
+
 
 app = Flask(__name__)
+app.secret_key = "5TuusD72v8MadIWpy5iSuFUhxfj08muCbYNd__gKb9Me9N4_fzfBGFWt4lb_WjzC"
+
+oauth = OAuth(app)
+
+oauth.register(
+    "auth0",
+    client_id = "GZv9novUajIi7uEOnsb0u4NPhp1vNfgA",
+    client_secret = "5TuusD72v8MadIWpy5iSuFUhxfj08muCbYNd__gKb9Me9N4_fzfBGFWt4lb_WjzC",
+    client_kwargs = {
+        "scope": "openid profile email",
+    },
+    server_metadata_url=f'https://dev-43ipz6kvjrxz8i0s.us.auth0.com/.well-known/openid-configuration'
+)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:bazepodataka@localhost/VlaznostZraka'
 db = SQLAlchemy(app)
@@ -42,10 +61,94 @@ class Mjerenje(db.Model):
     vlaznost_zraka = db.Column(db.Integer)
 
 data = None
+token = None
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    global token
+    return render_template("index.html", session=session.get('user'), token=token)
+
+@app.route("/login")
+def login():
+    return oauth.auth0.authorize_redirect(
+        redirect_uri=url_for("callback", _external=True)
+    )
+
+@app.route("/callback", methods=["GET", "POST"])
+def callback():
+    global token
+    token = oauth.auth0.authorize_access_token()
+    session["user"] = token
+    return redirect("/")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    global token
+    token = None
+    return redirect("/")
+
+@app.route("/profile", methods=["GET", "POST"])
+def profile():
+    print(token["userinfo"])
+    userinfo = token["userinfo"]
+    return render_template("profile.html", session=session.get('user'), userinfo=userinfo)
+
+@app.route("/refresh", methods=["GET", "POST"])
+def refresh():
+    query = db.session.query(
+        Drzava.ime_drzave,
+        Grad.ime_grada,
+        Mjerenje.godina,
+        Mjerenje.mjesec,
+        Mjerenje.dan,
+        Mjerenje.sat,
+        MeteoroloskaPostaja.ime_postaje,
+        MeteoroloskaPostaja.geografska_sirina,
+        MeteoroloskaPostaja.geografska_duzina,
+        Mjerenje.vlaznost_zraka
+    ).join(Grad, Drzava.id_drzave == Grad.id_drzave) \
+     .join(MeteoroloskaPostaja, Grad.id_grada == MeteoroloskaPostaja.id_grada) \
+     .join(Mjerenje, MeteoroloskaPostaja.id_postaje == Mjerenje.id_postaje)
+
+    results = query.all()
+    data = [
+        {
+            "ime_drzave": result.ime_drzave,
+            "ime_grada": result.ime_grada,
+            "godina": result.godina,
+            "mjesec": result.mjesec,
+            "dan": result.dan,
+            "sat": result.sat,
+            "ime_postaje": result.ime_postaje,
+            "geografska_sirina": result.geografska_sirina,
+            "geografska_duzina": result.geografska_duzina,
+            "vlaznost_zraka": result.vlaznost_zraka,
+        }
+        for result in results
+    ]
+
+    print(data)
+
+    f = open("meteoroloskiPodaci.json", "w")
+    f.write(str(json.dumps(data, indent=4)))
+    f.close()
+
+    with open("meteoroloskiPodaci.csv", mode="w", newline="", encoding="utf-8") as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_writer.writerow(["ime_drzave", "ime_grada", "godina", "mjesec", "dan", "sat", "ime_postaje", "geografska_sirina", "geografska_duzina", "vlaznost_zraka"])
+        for row in data:
+            csv_writer.writerow([
+                row["ime_drzave"], row["ime_grada"], row["godina"], row["mjesec"],
+                row["dan"], row["sat"], row["ime_postaje"], 
+                f"{row['geografska_sirina']}",
+                f"{row['geografska_duzina']}",
+                row["vlaznost_zraka"]
+            ])
+
+
+    return redirect("/")
+
 
 @app.route("/preuzmiCSV")
 def preuzmi_csv():
@@ -199,10 +302,23 @@ class Database(Resource):
             for result in results
         ]
 
-        return {'status': "200 OK", 'message': "fetched successfully", 'response': data}
- 
-    
-    
+        returnValue = {"@context": {
+                    "ime_drzave": "https://schema.org/Country",
+                    "ime_grada": "https://schema.org/City",
+                    "godina": "https://schema.org/Time",
+                    "mjesec": "https://schema.org/Time",
+                    "dan": "https://schema.org/Time",
+                    "sat": "https://schema.org/Time",
+                    "ime_postaje": "https://schema.org/CivicStructure",
+                    "geografska_sirina": "https://schema.org/latitude",
+                    "geografska_duzina": "https://schema.org/longitude",
+                    "vlaznost_zraka": "https://schema.org/QuantitativeValue"
+                }, "data" : data
+                }
+
+
+        return {'status': "200 OK", 'message': "fetched successfully", 'response': returnValue}
+  
 class Datapoint(Resource):
     def get(self, id):
         query = db.session.query(
@@ -225,6 +341,18 @@ class Datapoint(Resource):
             return {'status': "404 Not found", 'message': "Object with the provided ID doesn't exist", 'response': None}
 
         data = {
+                "@context": {
+                    "ime_drzave": "https://schema.org/Country",
+                    "ime_grada": "https://schema.org/City",
+                    "godina": "https://schema.org/Time",
+                    "mjesec": "https://schema.org/Time",
+                    "dan": "https://schema.org/Time",
+                    "sat": "https://schema.org/Time",
+                    "ime_postaje": "https://schema.org/CivicStructure",
+                    "geografska_sirina": "https://schema.org/latitude",
+                    "geografska_duzina": "https://schema.org/longitude",
+                    "vlaznost_zraka": "https://schema.org/QuantitativeValue"
+                },
                 "ime_drzave": results[id].ime_drzave,
                 "ime_grada": results[id].ime_grada,
                 "godina": results[id].godina,
@@ -236,9 +364,8 @@ class Datapoint(Resource):
                 "geografska_duzina": results[id].geografska_duzina,
                 "vlaznost_zraka": results[id].vlaznost_zraka,
             }
-
+        
         return {'status': "200 OK", 'message': "fetched successfully", 'response': data}
-
 
 class DatapointMjerenje(Resource):
     def get(self, id):
@@ -254,16 +381,22 @@ class DatapointMjerenje(Resource):
             return {'status': "404 Not found", 'message': "Object with the provided ID doesn't exist", 'response': None}
 
         data = {
+                "@context": {
+                    "godina": "https://schema.org/Time",
+                    "mjesec": "https://schema.org/Time",
+                    "dan": "https://schema.org/Time",
+                    "sat": "https://schema.org/Time",
+                    "vlaznost_zraka": "https://schema.org/QuantitativeValue"
+                },
                 "godina": results[id].godina,
                 "mjesec": results[id].mjesec,
                 "dan": results[id].dan,
                 "sat": results[id].sat,
-                "vlaznost_zraka": results[id].vlaznost_zraka,
+                "vlaznost_zraka": results[id].vlaznost_zraka
             }
 
         return {'status': "200 OK", 'message': "fetched successfully", 'response': data}
     
-
 class DatapointPostaja(Resource):
     def get(self, id):
         query = db.session.query(
@@ -276,14 +409,18 @@ class DatapointPostaja(Resource):
             return {'status': "404 Not found", 'message': "Object with the provided ID doesn't exist", 'response': None}
 
         data = {
+                "@context": {
+                    "ime_postaje": "https://schema.org/CivicStructure",
+                    "geografska_sirina": "https://schema.org/latitude",
+                    "geografska_duzina": "https://schema.org/longitude"
+                },
                 "ime_postaje": results[id].ime_postaje,
                 "geografska_sirina": results[id].geografska_sirina,
-                "geografska_duzina": results[id].geografska_duzina,
+                "geografska_duzina": results[id].geografska_duzina
             }
 
         return {'status': "200 OK", 'message': "fetched successfully", 'response': data}
     
-
 class DatapointDrzavaGrad(Resource):
     def get(self, id):
         query = db.session.query(
@@ -296,15 +433,18 @@ class DatapointDrzavaGrad(Resource):
             return {'status': "404 Not found", 'message': "Object with the provided ID doesn't exist", 'response': None}
 
         data = {
+                "@context": {
+                    "ime_drzave": "https://schema.org/Country",
+                    "ime_grada": "https://schema.org/City"
+                },
                 "ime_drzave": results[id].ime_drzave,
-                "ime_grada": results[id].ime_grada,
+                "ime_grada": results[id].ime_grada
             }
 
         return {'status': "200 OK", 'message': "fetched successfully", 'response': data}
 
-
 class DodajDrzavu(Resource):
-    def post(self, ime):
+    def put(self, ime):
         postojeca_drzava = Drzava.query.filter_by(ime_drzave=ime).first()
         if postojeca_drzava:
             return {'status': "400 Bad request", 'message': "Drzava vec postoji", 'response': None}
@@ -318,9 +458,8 @@ class DodajDrzavu(Resource):
             db.session.rollback()
             return {'status': "500 Internal server error", 'message': "Doslo je do pogreske prilikom dodavanja drzave", 'response':  str(e)}
 
-
 class IzmijeniDrzavu(Resource):
-    def put(self, id, ime):
+    def post(self, id, ime):
         try:
             drzava = Drzava.query.get(id)
             if not drzava:
@@ -332,7 +471,6 @@ class IzmijeniDrzavu(Resource):
         except Exception as e:
             db.session.rollback()
             return {"message": "Došlo je do greške prilikom ažuriranja države.", "response": str(e)}  
-
 
 class MakniDrzavu(Resource):
     def delete(self, id):

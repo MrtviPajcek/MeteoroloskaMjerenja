@@ -12,20 +12,15 @@
 </head>
 <style>
     body {
-        background-color: white;
-    }
+    background-color: white;
+}
 </style>
 <body>  
-    <h1>Meteorološki podaci</h1>
-    <p><a href="preuzmiCSV">preuzmi csv</a></p>
-    <p><a href="preuzmiJSON">preuzmi json</a></p>
-    <p><a href="datatable">datatable</a></p>
-    {% if token is none %}
-        <p><a href="login">prijava</a></p>
-    {% else %}
-        <p><a href="profile">korisnički profil</a></p>
-        <p><a href="refresh">osvježi preslike</a></p>
-        <p><a href="logout">odjava</a></p>
-    {% endif %}
+    <h1>Korisnički podaci</h1>
+    <p>Nadimak: {{ userinfo.nickname }}</p>
+    <p>Ime: {{ userinfo.name }}</p>
+    <p>Email: {{ userinfo.email }}</p>
+    <p>Profilna slika:</p>
+    <img src="{{ userinfo.picture }}">  
 </body>
 </html>
